@@ -1,0 +1,157 @@
+version: 2
+
+models:
+  - name: int_fact_seat_final__base
+    description: ""
+    columns:
+      - name: teamabbreviation
+        data_type: varchar
+        description: ""
+
+      - name: filedate
+        data_type: varchar
+        description: ""
+
+      - name: eventid
+        data_type: varchar
+        description: ""
+
+      - name: seasonid
+        data_type: number
+        description: ""
+
+      - name: blockhash
+        data_type: varchar
+        description: ""
+
+      - name: skhash
+        data_type: varchar
+        description: ""
+
+      - name: source
+        data_type: varchar
+        description: ""
+
+      - name: sourcetype
+        data_type: varchar
+        description: ""
+
+      - name: activitydate
+        data_type: timestamp_ltz
+        description: ""
+
+      - name: customerkey
+        data_type: number
+        description: ""
+
+      - name: marketplacekey
+        data_type: number
+        description: ""
+
+      - name: eventkey
+        data_type: number
+        description: ""
+
+      - name: seasonkey
+        data_type: number
+        description: ""
+
+      - name: pricecodekey
+        data_type: number
+        description: ""
+
+      - name: hostindicator
+        data_type: varchar
+        description: ""
+
+      - name: ticketingorderkey
+        data_type: number
+        description: ""
+
+      - name: plankey
+        data_type: number
+        description: ""
+
+      - name: renewalkey
+        data_type: varchar
+        description: ""
+
+      - name: sectionname
+        data_type: varchar
+        description: ""
+
+      - name: rowname
+        data_type: varchar
+        description: ""
+
+      - name: seat
+        data_type: number
+        description: ""
+
+      - name: attendanceindicator
+        data_type: varchar
+        description: ""
+
+      - name: utilizationindicator
+        data_type: varchar
+        description: ""
+
+      - name: seatfullprice
+        data_type: number
+        description: ""
+
+      - name: revenue
+        data_type: number
+        description: ""
+
+      - name: compname
+        data_type: varchar
+        description: ""
+
+      - name: seatstatus
+        data_type: varchar
+        description: ""
+
+      - name: tickettype
+        data_type: varchar
+        description: ""
+
+      - name: purchasetype
+        data_type: varchar
+        description: ""
+
+      - name: transactiontype
+        data_type: varchar
+        description: ""
+
+      - name: holdreason
+        data_type: varchar
+        description: ""
+
+      - name: promocode
+        data_type: varchar
+        description: ""
+
+      - name: stalerecord
+        data_type: number
+        description: ""
+
+      - name: sequenceid
+        data_type: number
+        description: ""
+
+      - name: selllocation_hash
+        data_type: varchar
+        description: ""
+
+      - name: deliverymethod_base_skhash
+        data_type: varchar
+        description: ""
+
+      - name: seasonyear
+        data_type: number
+        description: ""
+
+      - name: manifestid
+        data_type: number
+        description: ""
