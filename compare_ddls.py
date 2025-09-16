@@ -40,26 +40,59 @@ class TableSchema:
         """Return set of column names (case-insensitive)"""
         return {col.name.upper() for col in self.columns}
 
-def parse_ddl_columns(ddl_content: str) -> List[Column]:
+def parse_ddl_columns(ddl_content: str, debug: bool = False) -> List[Column]:
     """
     Parse DDL content and extract column definitions
     
     Args:
         ddl_content: DDL statement content
+        debug: If True, print debugging information
         
     Returns:
         List of Column objects
     """
     columns = []
     
+    if debug:
+        print(f"DEBUG: Parsing DDL content (first 200 chars): {ddl_content[:200]}...")
+    
     # Find the CREATE statement and extract the column definitions
-    create_match = re.search(r'CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+VIEW|TABLE)\s+.*?\s*\((.*?)\);?', 
+    # Updated pattern to handle the actual DDL format better
+    create_match = re.search(r'CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+VIEW|TABLE)\s+[^\(]+\s*\((.*?)\)\s*;?', 
                             ddl_content, re.IGNORECASE | re.DOTALL)
     
     if not create_match:
+        # Try alternative pattern for cases where DDL might not end with semicolon
+        create_match = re.search(r'CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+VIEW|TABLE)\s+[^\(]+\s*\((.*)', 
+                                ddl_content, re.IGNORECASE | re.DOTALL)
+    
+    if not create_match:
+        if debug:
+            print("DEBUG: No CREATE statement match found")
         return columns
     
     columns_section = create_match.group(1)
+    if debug:
+        print(f"DEBUG: Extracted columns section (first 200 chars): {columns_section[:200]}...")
+    
+    # Remove any trailing content after the last closing parenthesis
+    # Find the last occurrence of column-like patterns
+    paren_count = 0
+    last_valid_pos = len(columns_section)
+    
+    for i, char in enumerate(columns_section):
+        if char == '(':
+            paren_count += 1
+        elif char == ')':
+            paren_count -= 1
+            if paren_count < 0:  # Found the closing parenthesis of CREATE TABLE
+                last_valid_pos = i
+                break
+    
+    columns_section = columns_section[:last_valid_pos]
+    
+    if debug:
+        print(f"DEBUG: Final columns section (first 200 chars): {columns_section[:200]}...")
     
     # Split by comma, but be careful about commas inside parentheses (for data types like VARCHAR(100))
     column_definitions = []
@@ -82,6 +115,11 @@ def parse_ddl_columns(ddl_content: str) -> List[Column]:
     if current_def.strip():
         column_definitions.append(current_def.strip())
     
+    if debug:
+        print(f"DEBUG: Found {len(column_definitions)} column definitions")
+        for i, col_def in enumerate(column_definitions[:3]):  # Show first 3
+            print(f"DEBUG: Column {i+1}: {col_def}")
+    
     # Parse each column definition
     for col_def in column_definitions:
         col_def = col_def.strip()
@@ -90,10 +128,12 @@ def parse_ddl_columns(ddl_content: str) -> List[Column]:
             
         # Skip constraints and other non-column definitions
         if any(keyword in col_def.upper() for keyword in ['CONSTRAINT', 'PRIMARY KEY', 'FOREIGN KEY', 'UNIQUE', 'INDEX', 'CHECK']):
+            if debug:
+                print(f"DEBUG: Skipping constraint: {col_def}")
             continue
         
         # Extract column name and data type
-        # Pattern: COLUMN_NAME DATA_TYPE [NOT NULL] [DEFAULT value]
+        # Updated pattern to handle various column definition formats
         col_match = re.match(r'^\s*([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z0-9_()]+(?:\([^)]*\))?)\s*(.*)?', col_def)
         
         if col_match:
@@ -114,6 +154,14 @@ def parse_ddl_columns(ddl_content: str) -> List[Column]:
                 nullable=nullable,
                 default_value=default_value
             ))
+            
+            if debug:
+                print(f"DEBUG: Added column: {col_name} {data_type}")
+        elif debug:
+            print(f"DEBUG: Failed to parse column definition: {col_def}")
+    
+    if debug:
+        print(f"DEBUG: Final result: {len(columns)} columns parsed")
     
     return columns
 
@@ -152,12 +200,24 @@ def extract_schemas_from_ddl_files(ddl_directory: str) -> Dict[str, Dict[str, Ta
                 schema_content = schema_sections[i + 1] if i + 1 < len(schema_sections) else ""
                 
                 # Extract DDL statement for this schema
-                ddl_match = re.search(r'(CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+VIEW|TABLE)\s+.*?);', 
+                # Look for the CREATE statement that follows the schema header
+                ddl_match = re.search(r'(CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+VIEW|TABLE)\s+[^;]+(?:\([^)]*\))*[^;]*)', 
                                     schema_content, re.IGNORECASE | re.DOTALL)
                 
                 if ddl_match:
                     ddl_statement = ddl_match.group(1)
-                    columns = parse_ddl_columns(ddl_statement)
+                    
+                    # If the DDL doesn't seem to include the full column list, try to get more content
+                    if '(' in ddl_statement and ddl_statement.count('(') > ddl_statement.count(')'):
+                        # Try to get more content until we have matching parentheses
+                        extended_match = re.search(r'(CREATE\s+(?:OR\s+REPLACE\s+)?(?:MATERIALIZED\s+VIEW|TABLE)\s+.*?(?:\([^)]*\)[^)]*)*)', 
+                                                 schema_content, re.IGNORECASE | re.DOTALL)
+                        if extended_match:
+                            ddl_statement = extended_match.group(1)
+                    
+                    # Enable debug for specific problematic table
+                    debug_mode = table_name == "DIM_PLANGROUPING"
+                    columns = parse_ddl_columns(ddl_statement, debug=debug_mode)
                     is_view = 'VIEW' in ddl_statement.upper() and 'MATERIALIZED' in ddl_statement.upper()
                     
                     table_schemas[table_name][schema_name] = TableSchema(

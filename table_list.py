@@ -164,11 +164,22 @@ def extract_ddls_grouped_by_table(tables_dict: Dict[str, List[str]], output_dir:
                                         f"TABLE {schema_name}.{table_name}"
                                     )
                                 else:
-                                    # Replace "VIEW table_name" with "VIEW schema.table_name"
-                                    ddl_with_schema = ddl.replace(
-                                        f"VIEW {table_name}",
-                                        f"VIEW {schema_name}.{table_name}"
+                                    # For materialized views, replace "VIEW view_name(" with "VIEW schema.view_name("
+                                    # Handle both "materialized view VIEW_NAME(" and "materialized view VIEW_NAME "
+                                    ddl_with_schema = re.sub(
+                                        rf'(MATERIALIZED\s+VIEW\s+){table_name}(\s*\()',
+                                        rf'\1{schema_name}.{table_name}\2',
+                                        ddl,
+                                        flags=re.IGNORECASE
                                     )
+                                    # Also handle case where there might be no parentheses immediately
+                                    if ddl_with_schema == ddl:  # If no replacement was made
+                                        ddl_with_schema = re.sub(
+                                            rf'(MATERIALIZED\s+VIEW\s+){table_name}(\s)',
+                                            rf'\1{schema_name}.{table_name}\2',
+                                            ddl,
+                                            flags=re.IGNORECASE
+                                        )
                                 
                                 # Write schema section header
                                 f.write(f"-- SCHEMA: {schema_name}\n")

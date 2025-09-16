@@ -301,7 +301,7 @@ if __name__ == "__main__":
     
     # Option 1: Execute all DDL files from directory (dry run first)
     print("\n1️⃣ Dry run - Execute all DDL files from 'table_ddls' directory:")
-    execute_ddls_from_directory('table_ddls', dry_run=True)
+    execute_ddls_from_directory(r"C:\Users\Sanjeevs\OneDrive - Kraft Group LLC\Documents\storm", dry_run=True)
     
     # Option 2: Execute DDLs for specific schemas only (uncomment to use)
     # print("\n2️⃣ Execute DDLs for KAGR schema only:")
