@@ -2,7 +2,7 @@
 
 import os
 import re
-from compare_ddls_all import parse_ddl_columns
+from storm_ddls_by_schema.compare_ddls_all import parse_ddl_columns
 
 def test_ddl_parsing():
     # Read the DIM_DATE_HISTORY.sql file
